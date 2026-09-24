@@ -65,40 +65,97 @@ const INITIAL_STUDENTS = [
   },
 ];
 
+const DEFAULT_AVATAR =
+  "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-3.8-.85-5.05-2.2.03-1.68 3.37-2.6 5.05-2.6s5.02.92 5.05 2.6C15.8 19.15 14.03 20 12 20z'/></svg>";
+
 export default function App() {
   const [students, setStudents] = useState(INITIAL_STUDENTS);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [sortBy, setSortBy] = useState('name');
-  
+
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   const [formData, setFormData] = useState({
-    id: '', rollNo: '', name: '', age: '', gender: 'Male', phone: '', course: '', department: 'CSE', email: '', cgpa: '', year: '1st Year', status: 'Active', photoUrl: ''
+    id: '',
+    rollNo: '',
+    name: '',
+    age: '',
+    gender: 'Male',
+    phone: '',
+    course: '',
+    department: 'CSE',
+    email: '',
+    cgpa: '',
+    year: '1st Year',
+    status: 'Active',
+    photoUrl: '',
   });
 
   const totalStudents = students.length;
-  const activeStudents = students.filter(s => s.status === 'Active').length;
-  const avgCgpa = (students.reduce((acc, curr) => acc + parseFloat(curr.cgpa || 0), 0) / (totalStudents || 1)).toFixed(2);
+
+  const activeStudents = students.filter(
+    (student) => student.status === 'Active'
+  ).length;
+
+  const avgCgpa = (
+    students.reduce(
+      (total, student) => total + parseFloat(student.cgpa || 0),
+      0
+    ) / (totalStudents || 1)
+  ).toFixed(2);
 
   const exportToCSV = () => {
-    const headers = ["ID,RollNo,Name,Age,Gender,Phone,Course,Department,Email,CGPA,Year,Status\n"];
-    const rows = students.map(s => `"${s.id}","${s.rollNo}","${s.name}","${s.age}","${s.gender}","${s.phone}","${s.course}","${s.department}","${s.email}","${s.cgpa}","${s.year}","${s.status}"\n`);
-    const blob = new Blob([...headers, ...rows], { type: 'text/csv' });
+    const headers =
+      'ID,RollNo,Name,Age,Gender,Phone,Course,Department,Email,CGPA,Year,Status\n';
+
+    const rows = students
+      .map(
+        (student) =>
+          `"${student.id}","${student.rollNo}","${student.name}","${student.age}","${student.gender}","${student.phone}","${student.course}","${student.department}","${student.email}","${student.cgpa}","${student.year}","${student.status}"\n`
+      )
+      .join('');
+
+    const blob = new Blob([headers, rows], {
+      type: 'text/csv',
+    });
+
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Student_Report_${new Date().toISOString().slice(0,10)}.csv`;
-    a.click();
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `Student_Report_${new Date()
+      .toISOString()
+      .slice(0, 10)}.csv`;
+
+    link.click();
+
+    window.URL.revokeObjectURL(url);
   };
 
   const handleOpenAddModal = () => {
     setIsEditing(false);
-    setFormData({ id: Date.now().toString(), rollNo: '', name: '', age: '', gender: 'Male', phone: '', course: '', department: 'CSE', email: '', cgpa: '', year: '1st Year', status: 'Active', photoUrl: '' });
+
+    setFormData({
+      id: Date.now().toString(),
+      rollNo: '',
+      name: '',
+      age: '',
+      gender: 'Male',
+      phone: '',
+      course: '',
+      department: 'CSE',
+      email: '',
+      cgpa: '',
+      year: '1st Year',
+      status: 'Active',
+      photoUrl: '',
+    });
+
     setIsModalOpen(true);
   };
 
@@ -115,47 +172,89 @@ export default function App() {
 
   const handleDelete = (id) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
-      setStudents(students.filter((s) => s.id !== id));
+      setStudents(
+        students.filter((student) => student.id !== id)
+      );
     }
   };
 
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
+  const handleFormSubmit = (event) => {
+    event.preventDefault();
+
     if (isEditing) {
-      setStudents(students.map((s) => (s.id === formData.id ? formData : s)));
+      setStudents(
+        students.map((student) =>
+          student.id === formData.id ? formData : student
+        )
+      );
     } else {
       setStudents([formData, ...students]);
     }
+
     setIsModalOpen(false);
   };
 
   const processedStudents = students
-    .filter((s) => {
-      const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            (s.rollNo && s.rollNo.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesDept = selectedDept === 'All' || s.department === selectedDept;
-      const matchesStatus = selectedStatus === 'All' || s.status === selectedStatus;
-      return matchesSearch && matchesDept && matchesStatus;
+    .filter((student) => {
+      const search = searchTerm.toLowerCase();
+
+      const matchesSearch =
+        student.name.toLowerCase().includes(search) ||
+        student.email.toLowerCase().includes(search) ||
+        (student.rollNo &&
+          student.rollNo.toLowerCase().includes(search));
+
+      const matchesDepartment =
+        selectedDept === 'All' ||
+        student.department === selectedDept;
+
+      const matchesStatus =
+        selectedStatus === 'All' ||
+        student.status === selectedStatus;
+
+      return (
+        matchesSearch &&
+        matchesDepartment &&
+        matchesStatus
+      );
     })
     .sort((a, b) => {
-      if (sortBy === 'cgpa-high') return parseFloat(b.cgpa) - parseFloat(a.cgpa);
-      if (sortBy === 'cgpa-low') return parseFloat(a.cgpa) - parseFloat(b.cgpa);
+      if (sortBy === 'cgpa-high') {
+        return parseFloat(b.cgpa) - parseFloat(a.cgpa);
+      }
+
+      if (sortBy === 'cgpa-low') {
+        return parseFloat(a.cgpa) - parseFloat(b.cgpa);
+      }
+
       return a.name.localeCompare(b.name);
     });
 
   return (
-    <div style={{ backgroundColor: '#0f172a', minHeight: '100vh', color: '#ffffff' }}>
+    <div className="app">
       <header className="app-header">
-        <div>
-          <h1 className="header-title">🎓 Student Portal Dashboard</h1>
-          <p className="header-subtitle">Manage records, monitor academic metrics, and track profiles</p>
+        <div className="header-left">
+          <h1 className="header-title">
+            🎓 Student Portal Dashboard
+          </h1>
+
+          <p className="header-subtitle">
+            Manage records, monitor academic metrics, and track profiles
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn" style={{ background: '#334155', color: '#fff', border: '1px solid #475569' }} onClick={exportToCSV}>
+
+        <div className="header-actions">
+          <button
+            className="export-btn"
+            onClick={exportToCSV}
+          >
             📥 Export CSV
           </button>
-          <button className="btn-primary" onClick={handleOpenAddModal}>
+
+          <button
+            className="btn-primary"
+            onClick={handleOpenAddModal}
+          >
             + Add New Student
           </button>
         </div>
@@ -163,17 +262,34 @@ export default function App() {
 
       <main className="container">
         <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-label">Total Students</div>
-            <div className="stat-value">{totalStudents}</div>
+          <div className="stat-card stat-total">
+            <div className="stat-label">
+              Total Students
+            </div>
+
+            <div className="stat-value">
+              {totalStudents}
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-label">Active Enrollment</div>
-            <div className="stat-value" style={{ color: '#4ade80' }}>{activeStudents}</div>
+
+          <div className="stat-card stat-active">
+            <div className="stat-label">
+              Active Enrollment
+            </div>
+
+            <div className="stat-value">
+              {activeStudents}
+            </div>
           </div>
-          <div className="stat-card">
-            <div className="stat-label">Average CGPA</div>
-            <div className="stat-value" style={{ color: '#38bdf8' }}>{avgCgpa}</div>
+
+          <div className="stat-card stat-cgpa">
+            <div className="stat-label">
+              Average CGPA
+            </div>
+
+            <div className="stat-value">
+              {avgCgpa}
+            </div>
           </div>
         </div>
 
@@ -183,9 +299,18 @@ export default function App() {
             className="search-input"
             placeholder="🔍 Search name, email, or Roll No..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) =>
+              setSearchTerm(event.target.value)
+            }
           />
-          <select className="select-input" value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)}>
+
+          <select
+            className="select-input"
+            value={selectedDept}
+            onChange={(event) =>
+              setSelectedDept(event.target.value)
+            }
+          >
             <option value="All">All Departments</option>
             <option value="CSE">CSE</option>
             <option value="IT">IT</option>
@@ -193,16 +318,34 @@ export default function App() {
             <option value="EEE">EEE</option>
             <option value="MECH">MECH</option>
           </select>
-          <select className="select-input" value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)}>
+
+          <select
+            className="select-input"
+            value={selectedStatus}
+            onChange={(event) =>
+              setSelectedStatus(event.target.value)
+            }
+          >
             <option value="All">All Status</option>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
             <option value="Graduated">Graduated</option>
           </select>
-          <select className="select-input" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+
+          <select
+            className="select-input"
+            value={sortBy}
+            onChange={(event) =>
+              setSortBy(event.target.value)
+            }
+          >
             <option value="name">Sort by Name</option>
-            <option value="cgpa-high">Sort by CGPA (High to Low)</option>
-            <option value="cgpa-low">Sort by CGPA (Low to High)</option>
+            <option value="cgpa-high">
+              Sort by CGPA (High to Low)
+            </option>
+            <option value="cgpa-low">
+              Sort by CGPA (Low to High)
+            </option>
           </select>
         </div>
 
@@ -218,39 +361,94 @@ export default function App() {
               />
             ))
           ) : (
-            <p style={{ gridColumn: '1/-1', textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>
+            <p className="no-students">
               No students found matching the criteria.
             </p>
           )}
         </div>
       </main>
 
-      {/* Add / Edit Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
-            <button className="close-btn" onClick={() => setIsModalOpen(false)}>✖</button>
-            <h3 style={{ margin: '0 0 20px 0' }}>{isEditing ? '✏️ Edit Student' : '➕ Add New Student'}</h3>
+            <button
+              className="close-btn"
+              onClick={() => setIsModalOpen(false)}
+            >
+              ✖
+            </button>
+
+            <h3 className="modal-title">
+              {isEditing
+                ? '✏️ Edit Student'
+                : '➕ Add New Student'}
+            </h3>
+
             <form onSubmit={handleFormSubmit}>
               <div className="form-row">
                 <div className="form-group">
                   <label>Roll / Reg No</label>
-                  <input type="text" required placeholder="e.g. 24CS001" value={formData.rollNo} onChange={(e) => setFormData({ ...formData, rollNo: e.target.value })} />
+
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 24CS001"
+                    value={formData.rollNo}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        rollNo: event.target.value,
+                      })
+                    }
+                  />
                 </div>
+
                 <div className="form-group">
                   <label>Full Name</label>
-                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        name: event.target.value,
+                      })
+                    }
+                  />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>Age</label>
-                  <input type="number" required value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} />
+
+                  <input
+                    type="number"
+                    required
+                    value={formData.age}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        age: event.target.value,
+                      })
+                    }
+                  />
                 </div>
+
                 <div className="form-group">
                   <label>Gender</label>
-                  <select value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}>
+
+                  <select
+                    value={formData.gender}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        gender: event.target.value,
+                      })
+                    }
+                  >
                     <option value="Male">Male</option>
                     <option value="Female">Female</option>
                     <option value="Other">Other</option>
@@ -261,18 +459,51 @@ export default function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Phone Number</label>
-                  <input type="text" required placeholder="+91..." value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+
+                  <input
+                    type="text"
+                    required
+                    placeholder="+91..."
+                    value={formData.phone}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        phone: event.target.value,
+                      })
+                    }
+                  />
                 </div>
+
                 <div className="form-group">
                   <label>Email Address</label>
-                  <input type="email" required value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        email: event.target.value,
+                      })
+                    }
+                  />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>Department</label>
-                  <select value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })}>
+
+                  <select
+                    value={formData.department}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        department: event.target.value,
+                      })
+                    }
+                  >
                     <option value="CSE">CSE</option>
                     <option value="IT">IT</option>
                     <option value="ECE">ECE</option>
@@ -280,9 +511,19 @@ export default function App() {
                     <option value="MECH">MECH</option>
                   </select>
                 </div>
+
                 <div className="form-group">
                   <label>Academic Year</label>
-                  <select value={formData.year} onChange={(e) => setFormData({ ...formData, year: e.target.value })}>
+
+                  <select
+                    value={formData.year}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        year: event.target.value,
+                      })
+                    }
+                  >
                     <option value="1st Year">1st Year</option>
                     <option value="2nd Year">2nd Year</option>
                     <option value="3rd Year">3rd Year</option>
@@ -295,62 +536,168 @@ export default function App() {
               <div className="form-row">
                 <div className="form-group">
                   <label>Degree / Course</label>
-                  <input type="text" required value={formData.course} onChange={(e) => setFormData({ ...formData, course: e.target.value })} />
+
+                  <input
+                    type="text"
+                    required
+                    value={formData.course}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        course: event.target.value,
+                      })
+                    }
+                  />
                 </div>
+
                 <div className="form-group">
                   <label>CGPA</label>
-                  <input type="text" required value={formData.cgpa} onChange={(e) => setFormData({ ...formData, cgpa: e.target.value })} />
+
+                  <input
+                    type="text"
+                    required
+                    value={formData.cgpa}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        cgpa: event.target.value,
+                      })
+                    }
+                  />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
                   <label>Status</label>
-                  <select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })}>
+
+                  <select
+                    value={formData.status}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        status: event.target.value,
+                      })
+                    }
+                  >
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="Graduated">Graduated</option>
                   </select>
                 </div>
+
                 <div className="form-group">
-                  <label>Photo URL (Optional)</label>
-                  <input type="text" placeholder="https://..." value={formData.photoUrl} onChange={(e) => setFormData({ ...formData, photoUrl: e.target.value })} />
+                  <label>Photo URL</label>
+
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={formData.photoUrl}
+                    onChange={(event) =>
+                      setFormData({
+                        ...formData,
+                        photoUrl: event.target.value,
+                      })
+                    }
+                  />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button type="button" className="btn" style={{ flex: 1 }} onClick={() => setIsModalOpen(false)}>Cancel</button>
-                <button type="submit" className="btn-primary" style={{ flex: 1 }}>{isEditing ? 'Save Changes' : 'Create Record'}</button>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="btn btn-cancel"
+                  onClick={() => setIsModalOpen(false)}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="btn-primary modal-save"
+                >
+                  {isEditing
+                    ? 'Save Changes'
+                    : 'Create Record'}
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* View Details Modal */}
       {isViewModalOpen && selectedStudent && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <button className="close-btn" onClick={() => setIsViewModalOpen(false)}>✖</button>
-            <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+          <div className="modal-content view-modal">
+            <button
+              className="close-btn"
+              onClick={() => setIsViewModalOpen(false)}
+            >
+              ✖
+            </button>
+
+            <div className="view-profile">
               <img
-                src={selectedStudent.photoUrl || "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='%2394a3b8'><path d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm0 14c-2.03 0-3.8-.85-5.05-2.2.03-1.68 3.37-2.6 5.05-2.6s5.02.92 5.05 2.6C15.8 19.15 14.03 20 12 20z'/></svg>"}
+                src={
+                  selectedStudent.photoUrl ||
+                  DEFAULT_AVATAR
+                }
                 alt={selectedStudent.name}
-                style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover' }}
+                className="view-avatar"
               />
-              <h3 style={{ margin: '8px 0 0 0' }}>{selectedStudent.name}</h3>
-              <p style={{ fontSize: '13px', color: '#38bdf8', margin: '4px 0', fontWeight: 'bold' }}>Reg No: {selectedStudent.rollNo || 'N/A'}</p>
+
+              <h3>{selectedStudent.name}</h3>
+
+              <p>
+                Reg No: {selectedStudent.rollNo || 'N/A'}
+              </p>
             </div>
-            <div style={{ fontSize: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div><strong>Course:</strong> {selectedStudent.course}</div>
-              <div><strong>Department:</strong> {selectedStudent.department}</div>
-              <div><strong>Academic Year:</strong> {selectedStudent.year}</div>
-              <div><strong>Gender:</strong> {selectedStudent.gender}</div>
-              <div><strong>Age:</strong> {selectedStudent.age} yrs</div>
-              <div><strong>CGPA:</strong> {selectedStudent.cgpa} / 10</div>
-              <div><strong>Email:</strong> {selectedStudent.email}</div>
-              <div><strong>Phone:</strong> {selectedStudent.phone || 'N/A'}</div>
-              <div><strong>Status:</strong> {selectedStudent.status}</div>
+
+            <div className="view-details">
+              <div>
+                <strong>Course</strong>
+                <span>{selectedStudent.course}</span>
+              </div>
+
+              <div>
+                <strong>Department</strong>
+                <span>{selectedStudent.department}</span>
+              </div>
+
+              <div>
+                <strong>Academic Year</strong>
+                <span>{selectedStudent.year}</span>
+              </div>
+
+              <div>
+                <strong>Gender</strong>
+                <span>{selectedStudent.gender}</span>
+              </div>
+
+              <div>
+                <strong>Age</strong>
+                <span>{selectedStudent.age} yrs</span>
+              </div>
+
+              <div>
+                <strong>CGPA</strong>
+                <span>{selectedStudent.cgpa} / 10</span>
+              </div>
+
+              <div>
+                <strong>Email</strong>
+                <span>{selectedStudent.email}</span>
+              </div>
+
+              <div>
+                <strong>Phone</strong>
+                <span>{selectedStudent.phone || 'N/A'}</span>
+              </div>
+
+              <div>
+                <strong>Status</strong>
+                <span>{selectedStudent.status}</span>
+              </div>
             </div>
           </div>
         </div>
